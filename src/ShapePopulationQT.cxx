@@ -84,6 +84,7 @@ ShapePopulationQT::ShapePopulationQT(QWidget* parent) : QWidget(parent)
     //Menu signals
     connect(actionOpen_Directory,SIGNAL(triggered()),this,SLOT(openDirectory()));
     connect(actionOpen_VTK_Files,SIGNAL(triggered()),this,SLOT(openFiles()));
+    connect(actionOpen_SRep_Files,SIGNAL(triggered()),this,SLOT(openSRepFiles()));
     connect(actionLoad_CSV,SIGNAL(triggered()),this,SLOT(loadCSV()));
     connect(m_CSVloaderDialog,SIGNAL(sig_itemsSelected(QFileInfoList)),this,SLOT(slot_itemsSelected(QFileInfoList)));
     connect(actionDelete,SIGNAL(triggered()),this,SLOT(deleteSelection()));
@@ -200,6 +201,18 @@ void ShapePopulationQT::on_pushButton_displayTools_clicked()
 void ShapePopulationQT::loadVTKFilesCLP(QFileInfoList a_fileList)
 {
     this->CreateWidgets(a_fileList);
+}
+
+void ShapePopulationQT::loadSRepFilesCLP(QFileInfoList a_fileList)
+{
+    this->CreateWidgets(a_fileList);
+
+    //Load color map for S-Reps
+    QString filename = ":/resources/sRepColorMap.spvcm";
+    QFileInfo file(filename);
+    m_colormapDirectory= file.path();
+    gradientWidget_VISU->loadColorPointList(filename, &m_usedColorBar->colorPointList);
+    this->updateColorbar_QT();
 }
 
 void ShapePopulationQT::loadModel(vtkMRMLModelNode* modelNode)
@@ -345,6 +358,35 @@ void ShapePopulationQT::openFiles()
     this->CreateWidgets(fileInfos);
 }
 
+void ShapePopulationQT::openSRepFiles()
+{
+    QStringList stringList = QFileDialog::getOpenFileNames(this,tr("Open Files"),m_lastDirectory,"S-Rep Files (*.xml)");
+    if(stringList.isEmpty())
+    {
+        return ;
+    }
+
+    m_lastDirectory=QFileInfo(stringList.at(0)).path();
+
+    //Add to fileList
+    QFileInfoList fileInfos;
+
+    //Control the files format
+    foreach(const QString& filePath, stringList)
+    {
+        fileInfos.append(QFileInfo(filePath));
+    }
+
+    //Display widgets
+    this->CreateWidgets(fileInfos);
+
+    //Load color map for S-Reps
+    QString filename = ":/resources/sRepColorMap.spvcm";
+    QFileInfo file(filename);
+    m_colormapDirectory= file.path();
+    gradientWidget_VISU->loadColorPointList(filename, &m_usedColorBar->colorPointList);
+    this->updateColorbar_QT();
+}
 
 void ShapePopulationQT::loadCSV()
 {
@@ -398,6 +440,7 @@ void ShapePopulationQT::deleteAll()
     //Initialize Menu actions
     actionOpen_Directory->setText("Open Directory");
     actionOpen_VTK_Files->setText("Open VTK Files");
+    actionOpen_SRep_Files->setText("Open SRep Files");
     actionLoad_CSV->setText("Load CSV File");
 
     //Empty the meshes FileInfo List
@@ -1188,6 +1231,7 @@ void ShapePopulationQT::CreateWidgets(const QList<vtkRenderWindow*>& renderWindo
     this->actionOpen_Directory->setText("Add Directory");
     this->actionOpen_VTK_Files->setText("Add VTK/VTP files");
     this->actionLoad_CSV->setText("Add CSV file");
+    this->actionOpen_SRep_Files->setText("Add S-Rep files");
 
     /* DISPLAY INFOS */
     this->updateInfo_QT();
@@ -1604,6 +1648,11 @@ void ShapePopulationQT::dropEvent(QDropEvent* Qevent)
                 fileList.append(QFileInfo(filePath));
                 load = true;
             }
+            else if(filePath.endsWith(".xml") && QFileInfo(filePath).exists())
+            {
+                fileList.append(QFileInfo(filePath));
+                load = true;
+            }
             else if(filePath.endsWith(".csv") && QFileInfo(filePath).exists())
             {
                 this->loadCSVFileCLP(QFileInfo(filePath));
@@ -1623,7 +1672,7 @@ void ShapePopulationQT::dropEvent(QDropEvent* Qevent)
         }
         if(load == true)
         {
-            this->loadVTKFilesCLP(fileList);
+            this->CreateWidgets(fileList);
         }
     }
 }
