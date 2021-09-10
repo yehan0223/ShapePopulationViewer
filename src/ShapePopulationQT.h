@@ -55,6 +55,7 @@ public:
 
     void loadVTKFilesCLP(QFileInfoList a_fileList);
     void loadSRepFilesCLP(QFileInfoList a_fileList);
+    void loadFiducialFilesCLP(QFileInfoList a_fileList);
     void loadModel(vtkMRMLModelNode* modelNode);
     void loadModel(vtkPolyData* polyData, const QString& modelName);
     void loadCSVFileCLP(QFileInfo file);
@@ -127,6 +128,7 @@ protected:
     void openDirectory();
     void openFiles();
     void openSRepFiles();
+    void openFiducialFiles();
     void loadCSV();
     void slot_itemsSelected(QFileInfoList fileList);
     void deleteAll();
