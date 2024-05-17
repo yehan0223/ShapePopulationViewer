@@ -172,33 +172,17 @@ void qSlicerShapePopulationViewerModuleWidget::setup()
     layoutNode->AddLayoutDescription(
                 vtkMRMLLayoutNode::SlicerLayoutUserView, shapePopulationViewerLayout);
 
-    // Delete Selection
-    {
-        QToolButton* button = new QToolButton();
-        button->setDefaultAction(d->ShapePopulationWidget->actionDelete);
-        d->ModuleWidgetLayout->insertWidget(1, button);
-    }
-
-    // Delete All
-    {
-        QToolButton* button = new QToolButton();
-        button->setDefaultAction(d->ShapePopulationWidget->actionDelete_All);
-        d->ModuleWidgetLayout->insertWidget(2, button);
-    }
+    // Delete Selection & All
+    d->toolButton_Delete_Selection->setDefaultAction(d->ShapePopulationWidget->actionDelete);
+    d->toolButton_Delete_All->setDefaultAction(d->ShapePopulationWidget->actionDelete_All);
 
     // Import
-    foreach(QAction* action, QList<QAction*>()
-            << d->ShapePopulationWidget->actionOpen_Directory
-            << d->ShapePopulationWidget->actionOpen_VTK_Files
-            << d->ShapePopulationWidget->actionLoad_CSV
-            << d->ShapePopulationWidget->actionOpen_SRep_Files
-            << d->ShapePopulationWidget->actionOpen_Fiducial_Files
-    )
-    {
-        QToolButton* button = new QToolButton();
-        button->setDefaultAction(action);
-        d->ImportLayout->addWidget(button);
-    }
+    d->toolButton_Open_Directory->setDefaultAction(d->ShapePopulationWidget->actionOpen_Directory);
+    d->toolButton_Open_VTK_Files->setDefaultAction(d->ShapePopulationWidget->actionOpen_VTK_Files);
+    d->toolButton_Load_CSV->setDefaultAction(d->ShapePopulationWidget->actionLoad_CSV);
+    d->toolButton_Load_Time_Series->setDefaultAction(d->ShapePopulationWidget->actionLoad_Time_Series);
+    d->toolButton_Open_SRep_Files->setDefaultAction(d->ShapePopulationWidget->actionOpen_SRep_Files);
+    d->toolButton_Open_Fiducial_Files->setDefaultAction(d->ShapePopulationWidget->actionOpen_Fiducial_Files);
 
     // Export
 #ifdef ShapePopulationViewer_HAS_EXPORT_SUPPORT
@@ -219,6 +203,7 @@ void qSlicerShapePopulationViewerModuleWidget::setup()
     bool exportVisible = false;
 #endif
     d->ExportCTKCollapsibleButton->setVisible(exportVisible);
+    d->SliderWidget_Load_Time_Series->setEnabled(false);
 
     // Settings
     foreach(QAction* action, QList<QAction*>()
@@ -233,6 +218,8 @@ void qSlicerShapePopulationViewerModuleWidget::setup()
     }
 
     connect(d->ModelLoadPushButton, SIGNAL(clicked()), this, SLOT(loadSelectedModel()));
+    connect(d->SliderWidget_Load_Time_Series, SIGNAL(valueChanged(double)), d->ShapePopulationWidget, SLOT(slot_timeIndicesChanged(double)));
+    connect(d->ShapePopulationWidget, SIGNAL(sig_loadTimeSeries(bool, unsigned int)), this, SLOT(onLoadTimeSeries(bool, unsigned int)));
 }
 
 //-----------------------------------------------------------------------------
@@ -342,4 +329,13 @@ void qSlicerShapePopulationViewerModuleWidget::onMRMLNodeModified(vtkObject *cal
     }
     this->loadModel(modelNode);
     qvtkDisconnect(modelNode, vtkCommand::ModifiedEvent, this, SLOT(onMRMLNodeModified(vtkObject*)));
+}
+
+void qSlicerShapePopulationViewerModuleWidget::onLoadTimeSeries(bool slider_enabled, unsigned int total_time_step)
+{
+    Q_D(qSlicerShapePopulationViewerModuleWidget);
+    d->SliderWidget_Load_Time_Series->setMinimum(0.0);
+    d->SliderWidget_Load_Time_Series->setMaximum((double)total_time_step - 1.0);
+    d->SliderWidget_Load_Time_Series->setValue(0.0);
+    d->SliderWidget_Load_Time_Series->setEnabled(slider_enabled);
 }
